@@ -6,6 +6,6 @@ target 'RxDemo' do
   use_frameworks!
 
   # Pods for RxDemo
-pod 'RxSwift', '6.1.0'
-pod 'RxCocoa', '6.1.0'
+pod 'RxSwift', '5.2.0'
+pod 'RxCocoa', '5.2.0'
 end

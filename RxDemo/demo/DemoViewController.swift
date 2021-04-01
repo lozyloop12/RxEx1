@@ -7,7 +7,8 @@
 //
 
 import UIKit
-//import RxSwift
+import RxSwift
+import RxCocoa
 
 class DemoViewController: UIViewController {
     
@@ -16,54 +17,44 @@ class DemoViewController: UIViewController {
     @IBOutlet weak var text3: UITextField!
     @IBOutlet weak var label: UILabel!
     @IBOutlet weak var button: UIButton!
-
+    
+    private let disposeBag = DisposeBag()
+    private let testViewModal = TestViewModal()
+        
     override func viewDidLoad() {
         super.viewDidLoad()
          self.navigationController?.isNavigationBarHidden = true
          setUpUI()
-        text1.addTarget(self, action: #selector(self.validateTextField), for: UIControl.Event.editingChanged)
-        text2.addTarget(self, action: #selector(self.validateTextField), for: UIControl.Event.editingChanged)
-        text3.addTarget(self, action: #selector(self.validateTextField), for: UIControl.Event.editingChanged)
-        // Do any additional setup after loading the view.
-    }
-    
-    override func viewWillAppear(_ animated: Bool) {
-        button.isEnabled = false
-    }
-    
-    @objc func validateTextField() {
-        if text1.text?.isEmpty == true || text2.text?.isEmpty == true || text3.text?.isEmpty == true
-          {
-            button.isEnabled = false
-
-          }
-         else
-          {
-           button.isEnabled = true
-          }
+        
+        text1.rx.text.map { $0 ?? "" }.bind(to: testViewModal.text1).disposed(by: disposeBag)
+        text2.rx.text.map { $0 ?? "" }.bind(to: testViewModal.text2).disposed(by: disposeBag)
+        text3.rx.text.map { $0 ?? "" }.bind(to: testViewModal.text3).disposed(by: disposeBag)
+        
+        testViewModal.isValid().bind(to: button.rx.isEnabled).disposed(by: disposeBag)
+        testViewModal.isValid().map { $0 ? 1 : 0.1 }.bind(to: button.rx.alpha).disposed(by: disposeBag)
     }
     
     private func setUpUI(){
-        button.layer.cornerRadius = 30
+        let round_width = UIScreen.main.bounds.size.width / 4
+        button.layer.cornerRadius = round_width
     }
 
     @IBAction func tapButton(_ sender: Any) {
-//       let disposeBag = DisposeBag()
-//       UIButton.rx.tap.subscribe({ [weak self] _ in
-//        guard let text = self?.text1.text + self?.text2.text + self?.text3.text  else {
-//            return
-//        }
-//        self.label.text = text
-//        }).disposed(by: disposeBag)
+        let new_text1 = String(text1.text ?? "")
+        let new_text2 = String(text2.text ?? "")
+        let new_text3 = String(text3.text ?? "")
+        label.text = "\(new_text1) \(new_text2) \(new_text3)"
     }
-    /*
-    // MARK: - Navigation
+}
 
-    // In a storyboard-based application, you will often want to do a little preparation before navigation
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        // Get the new view controller using segue.destination.
-        // Pass the selected object to the new view controller.
+class TestViewModal {
+    let text1 = PublishSubject<String>()
+    let text2 = PublishSubject<String>()
+    let text3 = PublishSubject<String>()
+    
+    func isValid() -> Observable<Bool>{
+        Observable.combineLatest(text1.asObserver().startWith(""), text2.asObserver().startWith(""), text3.asObserver().startWith("")).map{
+            textLabel1, textLabel2, textLabel3 in return textLabel1.count > 0 && textLabel2.count > 0 && textLabel3.count > 0
+        }.startWith(false)
     }
-    */
-
 }
